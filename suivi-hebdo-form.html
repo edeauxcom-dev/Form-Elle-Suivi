@@ -783,7 +783,7 @@
     document.getElementById('btnCharger').disabled = true;
 
     try {
-      const res = await fetch(API_URL + '?apprenante=' + encodeURIComponent(nom));
+      const res = await fetch(API_URL + '?apprenante=' + encodeURIComponent(nom) + '&_=' + Date.now(), { cache: 'no-store' });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || 'Erreur inconnue');
       const historique = data.data || [];
@@ -1033,7 +1033,7 @@
   async function chargerListeApprenantes() {
     if (API_URL.indexOf('COLLE_ICI') !== -1) return;
     try {
-      const res = await fetch(API_URL + '?action=noms');
+      const res = await fetch(API_URL + '?action=noms&_=' + Date.now(), { cache: 'no-store' });
       const json = await res.json();
       if (!json.ok || !Array.isArray(json.data)) return;
       const dl = document.getElementById('liste-apprenantes');
