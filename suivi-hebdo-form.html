@@ -378,11 +378,13 @@
         <div class="search-row">
           <div class="field">
             <label>Nom de l'apprenante</label>
-            <input type="text" id="apprenante" placeholder="Prénom Nom" oninput="onApprenanteInputChange()">
+            <input type="text" id="apprenante" placeholder="Prénom Nom" list="liste-apprenantes" autocomplete="off" oninput="onApprenanteInputChange()">
+            <datalist id="liste-apprenantes"></datalist>
           </div>
           <button type="button" class="btn-search" id="btnCharger" onclick="chargerFiche()">🔎 Charger la fiche</button>
         </div>
         <div class="recherche-status" id="recherche-status"></div>
+        <div class="aide-recherche" id="aide-recherche" style="font-size:11.5px; color:#999; margin-top:4px;">💡 Commence à taper : les apprenantes déjà enregistrées apparaissent dans la liste, il suffit de cliquer dessus.</div>
         <button type="button" class="btn-link-reset" id="btnReset" onclick="resetRecherche()" style="display:none;">↺ Changer d'apprenante</button>
       </div>
     </div>
@@ -797,6 +799,7 @@
     toggleAutreFormatrice();
     setDuree('');
     resetRecherche(false);
+    chargerListeApprenantes(); // rafraîchit la liste au cas où une nouvelle apprenante vient d'être ajoutée
 
     const btn = document.getElementById('submitBtn');
     btn.disabled = false;
@@ -872,9 +875,30 @@
     }, 10000);
   }
 
+  // Autocomplétion : charge la liste des apprenantes déjà enregistrées et alimente le <datalist>.
+  // Non bloquant : si ça échoue (API pas encore configurée, etc.), la recherche libre continue de fonctionner normalement.
+  async function chargerListeApprenantes() {
+    if (API_URL.indexOf('COLLE_ICI') !== -1) return;
+    try {
+      const res = await fetch(API_URL + '?action=noms');
+      const json = await res.json();
+      if (!json.ok || !Array.isArray(json.data)) return;
+      const dl = document.getElementById('liste-apprenantes');
+      dl.innerHTML = '';
+      json.data.forEach(nom => {
+        const opt = document.createElement('option');
+        opt.value = nom;
+        dl.appendChild(opt);
+      });
+    } catch (err) {
+      // silencieux : l'autocomplétion est un confort, pas une dépendance critique
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     buildPointsGrid();
     setSectionsEnabled(false);
+    chargerListeApprenantes();
   });
 </script>
 
