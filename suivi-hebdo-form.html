@@ -112,6 +112,7 @@
   .section-header.violet { background: var(--purple); }
   .section-header.vert   { background: var(--green); }
   .section-header.bleu   { background: var(--blue); }
+  .section-header.gris   { background: #6B7280; }
   .section-header .icon { font-size: 16px; }
   .section-body { padding: 16px; background: var(--white); }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; }
@@ -192,6 +193,26 @@
     font-weight: 600;
   }
   .checkbox-item input { accent-color: var(--purple); width: 15px; height: 15px; flex-shrink: 0; }
+
+  /* Drapeau de suivi */
+  .drapeau-grid { display: flex; flex-direction: column; gap: 10px; }
+  .drapeau-option {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 12px; border: 1.5px solid var(--grey-border); border-radius: 8px;
+    cursor: pointer; transition: border-color .12s ease, background .12s ease;
+  }
+  .drapeau-option input { margin-top: 3px; flex-shrink: 0; width: 15px; height: 15px; }
+  .drapeau-dot { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
+  .drapeau-option .txt strong { display: block; font-size: 13px; }
+  .drapeau-option .txt span { display: block; font-size: 11.5px; color: var(--grey-mid); margin-top: 2px; }
+  .drapeau-gris  .drapeau-dot { background: #9CA3AF; }
+  .drapeau-bleu  .drapeau-dot { background: var(--blue); }
+  .drapeau-jaune .drapeau-dot { background: #E8B93F; }
+  .drapeau-rouge .drapeau-dot { background: #D64545; }
+  .drapeau-option.drapeau-gris.selected  { border-color: #9CA3AF; background: #F3F4F6; }
+  .drapeau-option.drapeau-bleu.selected  { border-color: var(--blue); background: var(--blue-tint); }
+  .drapeau-option.drapeau-jaune.selected { border-color: #E8B93F; background: #FDF8E8; }
+  .drapeau-option.drapeau-rouge.selected { border-color: #D64545; background: #FCEAEA; }
 
   /* Bloc recherche apprenante */
   .search-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
@@ -428,7 +449,7 @@
           </div>
           <div class="field">
             <label>Date de démarrage</label>
-            <input type="date" id="dateDemarrage">
+            <input type="date" id="dateDemarrage" onchange="onDateDemarrageChange()">
           </div>
         </div>
       </div>
@@ -496,6 +517,59 @@
         <div class="note-text" style="font-size:11px;color:var(--grey-mid);font-style:italic;margin-top:8px;">
           À récupérer directement sur la plateforme Teachizy avant de compléter cette fiche.
         </div>
+        <div class="field" style="margin-top:14px;">
+          <label>Date de certification envisagée</label>
+          <input type="date" id="dateCertification">
+        </div>
+        <div class="note-text" style="font-size:11px;color:var(--grey-mid);font-style:italic;margin-top:8px;">
+          Pré-remplie avec la date du dernier suivi si connue — ajuste-la si la session de certification a été décalée (les sessions ont lieu environ tous les 15 jours, mi-mois et fin de mois).
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="section-drapeau">
+      <div class="section-header gris"><span class="icon">🚩</span> Drapeau de suivi</div>
+      <div class="section-body">
+        <div class="note-text" style="font-size:11px;color:var(--grey-mid);font-style:italic;margin-bottom:10px;">
+          À toi de choisir, selon ce que tu connais de l'apprenante — pas seulement le %.
+        </div>
+        <div class="drapeau-grid" id="drapeauGrid">
+          <label class="drapeau-option drapeau-gris" id="drapeau-item-gris">
+            <input type="radio" name="drapeauRadio" value="Gris" onchange="onDrapeauChange('gris')">
+            <span class="drapeau-dot"></span>
+            <span class="txt">
+              <strong>Gris — Rien à signaler</strong>
+              <span>Se connecte bien, suit sur Teachizy, vient aux rendez-vous, s'investit, rend ses devoirs.</span>
+            </span>
+          </label>
+          <label class="drapeau-option drapeau-bleu" id="drapeau-item-bleu">
+            <input type="radio" name="drapeauRadio" value="Bleu" onchange="onDrapeauChange('bleu')">
+            <span class="drapeau-dot"></span>
+            <span class="txt">
+              <strong>Bleu — Léger retard</strong>
+              <span>Moins de 5% de retard par rapport à l'attendu sur Teachizy — rien de grave, suit bien, se connecte, rendez-vous ok.</span>
+            </span>
+          </label>
+          <label class="drapeau-option drapeau-jaune" id="drapeau-item-jaune">
+            <input type="radio" name="drapeauRadio" value="Jaune" onchange="onDrapeauChange('jaune')">
+            <span class="drapeau-dot"></span>
+            <span class="txt">
+              <strong>Jaune — Retard non rattrapé</strong>
+              <span>Retard non rattrapé et/ou moins de 50% de complétion Teachizy en semaine 2, et/ou 1 rendez-vous manqué, et/ou répond peu aux sollicitations, et/ou ne fait pas les travaux.</span>
+            </span>
+          </label>
+          <label class="drapeau-option drapeau-rouge" id="drapeau-item-rouge">
+            <input type="radio" name="drapeauRadio" value="Rouge" onchange="onDrapeauChange('rouge')">
+            <span class="drapeau-dot"></span>
+            <span class="txt">
+              <strong>Rouge — Alerte critique</strong>
+              <span>Moins de 80% de complétion Teachizy en semaine 3, et/ou ne répond plus du tout aux sollicitations, ne se connecte pas ou très peu.</span>
+            </span>
+          </label>
+        </div>
+        <div class="note-text" style="font-size:11px;color:var(--grey-mid);font-style:italic;margin-top:10px;">
+          Rappel des paliers attendus sur Teachizy : semaine 1 → 25% · semaine 2 → 50% · semaine 3 → 80% · semaine 4 → ~100%.
+        </div>
       </div>
     </div>
 
@@ -557,6 +631,8 @@
   <input type="hidden" name="dateDemarrage">
   <input type="hidden" name="numRdv">
   <input type="hidden" name="pctProgression">
+  <input type="hidden" name="dateCertification">
+  <input type="hidden" name="drapeau">
   <input type="hidden" name="pointsCoches">
   <input type="hidden" name="pointsAutre">
   <input type="hidden" name="difficultes">
@@ -625,6 +701,16 @@
     return Array.from(document.querySelectorAll('#pointsGrid input:checked')).map(el => el.value).join(', ');
   }
 
+  // Suggère "date + 1 mois" (les apprenantes ont un mois pour suivre le parcours).
+  // Reste une suggestion éditable, jamais imposée.
+  function suggererDateCertification(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr + 'T00:00:00');
+    if (isNaN(d)) return '';
+    d.setMonth(d.getMonth() + 1);
+    return d.toISOString().slice(0, 10);
+  }
+
   function setStatus(msg, kind) {
     const el = document.getElementById('recherche-status');
     el.textContent = msg;
@@ -632,9 +718,39 @@
   }
 
   function setSectionsEnabled(enabled) {
-    ['section-identite', 'section-suivi', 'section-pct', 'section-points', 'section-bilan'].forEach(id => {
+    ['section-identite', 'section-suivi', 'section-pct', 'section-drapeau', 'section-points', 'section-bilan'].forEach(id => {
       document.getElementById(id).classList.toggle('disabled', !enabled);
     });
+  }
+
+  function onDrapeauChange(coul) {
+    document.querySelectorAll('.drapeau-option').forEach(el => el.classList.remove('selected'));
+    document.getElementById('drapeau-item-' + coul).classList.add('selected');
+  }
+
+  function setDrapeau(valeurTexte) {
+    // valeurTexte : "Gris" | "Bleu" | "Jaune" | "Rouge" | ""
+    document.querySelectorAll('.drapeau-option').forEach(el => el.classList.remove('selected'));
+    document.querySelectorAll('input[name="drapeauRadio"]').forEach(el => { el.checked = false; });
+    if (!valeurTexte) return;
+    const coul = valeurTexte.toLowerCase();
+    const radio = document.querySelector('input[name="drapeauRadio"][value="' + valeurTexte + '"]');
+    if (radio) radio.checked = true;
+    const item = document.getElementById('drapeau-item-' + coul);
+    if (item) item.classList.add('selected');
+  }
+
+  function getDrapeau() {
+    const checked = document.querySelector('input[name="drapeauRadio"]:checked');
+    return checked ? checked.value : '';
+  }
+
+  function onDateDemarrageChange() {
+    // Ne pré-remplit que si la date de certification n'a pas déjà été touchée à la main.
+    const champ = document.getElementById('dateCertification');
+    if (!champ.value) {
+      champ.value = suggererDateCertification(document.getElementById('dateDemarrage').value);
+    }
   }
 
   function onApprenanteInputChange() {
@@ -674,6 +790,7 @@
         document.getElementById('identite-readonly').style.display = 'none';
         document.getElementById('identite-editable').style.display = 'grid';
         afficherHistorique([]);
+        setDrapeau('');
       } else {
         ficheEtat = 'existante';
         const dernier = historique[0];
@@ -690,6 +807,15 @@
         document.getElementById('chipDateDemarrage').textContent = dateDemarrageConnue || '—';
 
         afficherHistorique(historique);
+
+        // Date de certification envisagée : reprend la dernière valeur connue,
+        // sinon suggère "date de démarrage + 1 mois" (à ajuster si besoin).
+        const dateCertConnue = dernier['Date de certification envisagée'] || suggererDateCertification(dateDemarrageConnue);
+        document.getElementById('dateCertification').value = dateCertConnue || '';
+
+        // Drapeau : pré-coché avec la dernière valeur connue comme point de départ,
+        // mais reste un choix actif de Sabrina à réévaluer à chaque suivi.
+        setDrapeau(dernier['Drapeau'] || '');
       }
 
       document.getElementById('dateSuivi').value = new Date().toISOString().slice(0,10);
@@ -772,6 +898,8 @@
     document.getElementById('formule').selectedIndex = 0;
     document.getElementById('modalite').selectedIndex = 0;
     document.getElementById('dateDemarrage').value = '';
+    document.getElementById('dateCertification').value = '';
+    setDrapeau('');
     document.getElementById('historique-empty').style.display = 'block';
     document.getElementById('historique-panel').style.display = 'none';
     if (keepName) document.getElementById('apprenante').focus();
@@ -831,6 +959,8 @@
       dateDemarrage:     dateDemarrageFinal,
       numRdv:            document.getElementById('numRdv').value,
       pctProgression:    document.getElementById('pctProgression').value,
+      dateCertification: document.getElementById('dateCertification').value,
+      drapeau:           getDrapeau(),
       pointsCoches:      getPointsCoches(),
       pointsAutre:       document.getElementById('pointsAutre').value,
       difficultes:       document.getElementById('difficultes').value,
@@ -840,6 +970,10 @@
 
     if (!payload.dateSuivi || !payload.apprenante || !payload.formatrice) {
       showMsg('Merci de renseigner au minimum la date, l\'apprenante et la formatrice.', false);
+      return;
+    }
+    if (!payload.drapeau) {
+      showMsg('Merci de sélectionner un drapeau de suivi (gris, bleu, jaune ou rouge).', false);
       return;
     }
     if (ficheEtat === 'nouvelle' && (!payload.formule || !payload.modalite || !payload.dateDemarrage)) {

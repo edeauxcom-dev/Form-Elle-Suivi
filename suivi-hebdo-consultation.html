@@ -162,6 +162,19 @@
   .pct-ok { background: var(--green-tint); color: var(--green); }
   .pct-warn { background: var(--orange-tint); color: var(--orange); }
   .pct-alert { background: var(--red-tint); color: var(--red); }
+  .drapeau-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-weight: 700; padding: 3px 9px; border-radius: 12px; font-size: 11.5px;
+  }
+  .drapeau-pill .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .drapeau-pill.gris  { background: #F3F4F6; color: #6B7280; }
+  .drapeau-pill.gris  .dot { background: #9CA3AF; }
+  .drapeau-pill.bleu  { background: var(--blue-tint, #EEF5FC); color: var(--blue, #5B9BD5); }
+  .drapeau-pill.bleu  .dot { background: var(--blue, #5B9BD5); }
+  .drapeau-pill.jaune { background: #FDF8E8; color: #97730F; }
+  .drapeau-pill.jaune .dot { background: #E8B93F; }
+  .drapeau-pill.rouge { background: #FCEAEA; color: #B23434; }
+  .drapeau-pill.rouge .dot { background: #D64545; }
   .cell-empty { color: #C9BFC5; font-style: italic; }
   .cell-wrap { max-width: 220px; white-space: pre-wrap; }
 
@@ -226,6 +239,7 @@
     <table id="tbl" style="display:none;">
       <thead>
         <tr>
+          <th data-key="Drapeau" onclick="setSort('Drapeau')">Drapeau <span class="arrow"></span></th>
           <th data-key="Date du suivi" onclick="setSort('Date du suivi')">Date <span class="arrow"></span></th>
           <th data-key="Apprenante" onclick="setSort('Apprenante')">Apprenante <span class="arrow"></span></th>
           <th data-key="Formatrice" onclick="setSort('Formatrice')">Formatrice <span class="arrow"></span></th>
@@ -235,6 +249,7 @@
           <th data-key="N° rendez-vous" onclick="setSort('N° rendez-vous')">RDV n° <span class="arrow"></span></th>
           <th data-key="Semaine de suivi" onclick="setSort('Semaine de suivi')">Semaine <span class="arrow"></span></th>
           <th data-key="% parcours validé" onclick="setSort('% parcours validé')">% validé <span class="arrow"></span></th>
+          <th data-key="Date de certification envisagée" onclick="setSort('Date de certification envisagée')">Certification visée <span class="arrow"></span></th>
           <th>Points abordés</th>
           <th>Difficultés</th>
           <th>Correction devoirs</th>
@@ -261,6 +276,15 @@
     const d = document.createElement('div');
     d.textContent = s;
     return d.innerHTML;
+  }
+
+  // Ordre d'urgence, du plus critique au moins critique — sert au tri par défaut de la colonne Drapeau.
+  const DRAPEAU_RANG = { 'Rouge': 0, 'Jaune': 1, 'Bleu': 2, 'Gris': 3, '': 4 };
+
+  function drapeauPill(valeur) {
+    if (!valeur) return '<span class="cell-empty">—</span>';
+    const coul = valeur.toLowerCase();
+    return `<span class="drapeau-pill ${esc(coul)}"><span class="dot"></span>${esc(valeur)}</span>`;
   }
 
   function pctClass(pct, semaine) {
@@ -315,8 +339,12 @@
 
   function compareVal(a, b, key) {
     let va = a[key], vb = b[key];
-    if (key === 'Date du suivi') { va = new Date(va || 0); vb = new Date(vb || 0); }
+    if (key === 'Date du suivi' || key === 'Date de certification envisagée') { va = new Date(va || 0); vb = new Date(vb || 0); }
     else if (key === 'Semaine de suivi' || key === '% parcours validé') { va = Number(va) || 0; vb = Number(vb) || 0; }
+    else if (key === 'Drapeau') {
+      va = DRAPEAU_RANG[va || ''] !== undefined ? DRAPEAU_RANG[va || ''] : 4;
+      vb = DRAPEAU_RANG[vb || ''] !== undefined ? DRAPEAU_RANG[vb || ''] : 4;
+    }
     else { va = (va || '').toString().toLowerCase(); vb = (vb || '').toString().toLowerCase(); }
     if (va < vb) return -1;
     if (va > vb) return 1;
@@ -332,7 +360,7 @@
 
     const tbody = document.getElementById('tbody');
     if (filtered.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:24px;color:var(--grey-mid);">Aucun suivi pour ces critères.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:24px;color:var(--grey-mid);">Aucun suivi pour ces critères.</td></tr>';
       return;
     }
 
@@ -343,6 +371,7 @@
       const cell = (v) => v ? `<div class="cell-wrap">${esc(v)}</div>` : '<span class="cell-empty">—</span>';
       return `
         <tr>
+          <td>${drapeauPill(s['Drapeau'])}</td>
           <td>${esc(s['Date du suivi'])}</td>
           <td><b>${esc(s['Apprenante'])}</b></td>
           <td>${esc(s['Formatrice'])}</td>
@@ -352,6 +381,7 @@
           <td>${esc(s['N° rendez-vous'])}</td>
           <td>${esc(s['Semaine de suivi'])}</td>
           <td>${pctDisplay}</td>
+          <td>${cell(s['Date de certification envisagée'])}</td>
           <td>${cell((s['Points abordés'] || '') + (s['Points abordés - précision'] ? ' — ' + s['Points abordés - précision'] : ''))}</td>
           <td>${cell(s['Difficultés rencontrées'])}</td>
           <td>${cell(s['Correction de devoirs'])}</td>
@@ -387,6 +417,7 @@
     filtered.sort((a, b) => compareVal(a, b, sortKey) * (sortDir === 'asc' ? 1 : -1));
 
     const rows = filtered.map(s => ({
+      'Drapeau': s['Drapeau'],
       'Date du suivi': s['Date du suivi'],
       'Apprenante': s['Apprenante'],
       'Formatrice': s['Formatrice'],
@@ -396,6 +427,7 @@
       'N° rendez-vous': s['N° rendez-vous'],
       'Semaine de suivi': s['Semaine de suivi'],
       '% parcours validé': s['% parcours validé'],
+      'Date de certification envisagée': s['Date de certification envisagée'],
       'Points abordés': s['Points abordés'],
       "Points abordés - précision": s['Points abordés - précision'],
       'Difficultés rencontrées': s['Difficultés rencontrées'],
