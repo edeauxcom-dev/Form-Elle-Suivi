@@ -202,13 +202,20 @@
     cursor: pointer; transition: border-color .12s ease, background .12s ease;
   }
   .drapeau-option input { margin-top: 3px; flex-shrink: 0; width: 15px; height: 15px; }
-  .drapeau-dot { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
+  .drapeau-flag { width: 15px; height: 15px; flex-shrink: 0; margin-top: 2px; }
+  .drapeau-flag svg { display: block; width: 100%; height: 100%; }
   .drapeau-option .txt strong { display: block; font-size: 13px; }
   .drapeau-option .txt span { display: block; font-size: 11.5px; color: var(--grey-mid); margin-top: 2px; }
-  .drapeau-gris  .drapeau-dot { background: #9CA3AF; }
-  .drapeau-bleu  .drapeau-dot { background: var(--blue); }
-  .drapeau-jaune .drapeau-dot { background: #E8B93F; }
-  .drapeau-rouge .drapeau-dot { background: #D64545; }
+  .drapeau-gris  .drapeau-flag { color: #9CA3AF; }
+  .drapeau-bleu  .drapeau-flag { color: var(--blue); }
+  .drapeau-jaune .drapeau-flag { color: #E8B93F; }
+  .drapeau-rouge .drapeau-flag { color: #D64545; }
+  .hist-drapeau-badge { display: inline-flex; width: 13px; height: 13px; vertical-align: -2px; margin-right: 6px; }
+  .hist-drapeau-badge svg { display: block; width: 100%; height: 100%; }
+  .hist-drapeau-badge.drapeau-gris  { color: #9CA3AF; }
+  .hist-drapeau-badge.drapeau-bleu  { color: var(--blue); }
+  .hist-drapeau-badge.drapeau-jaune { color: #E8B93F; }
+  .hist-drapeau-badge.drapeau-rouge { color: #D64545; }
   .drapeau-option.drapeau-gris.selected  { border-color: #9CA3AF; background: #F3F4F6; }
   .drapeau-option.drapeau-bleu.selected  { border-color: var(--blue); background: var(--blue-tint); }
   .drapeau-option.drapeau-jaune.selected { border-color: #E8B93F; background: #FDF8E8; }
@@ -536,7 +543,7 @@
         <div class="drapeau-grid" id="drapeauGrid">
           <label class="drapeau-option drapeau-gris" id="drapeau-item-gris">
             <input type="radio" name="drapeauRadio" value="Gris" onchange="onDrapeauChange('gris')">
-            <span class="drapeau-dot"></span>
+            <span class="drapeau-flag"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><line x1="2.4" y1="1" x2="2.4" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M2.9 1.9C5.8 0.6 8.4 3.1 12.4 1.9V8.6C8.4 9.8 5.8 7.3 2.9 8.6V1.9Z" fill="currentColor"/></svg></span>
             <span class="txt">
               <strong>Gris — Rien à signaler</strong>
               <span>Se connecte bien, suit sur Teachizy, vient aux rendez-vous, s'investit, rend ses devoirs.</span>
@@ -544,7 +551,7 @@
           </label>
           <label class="drapeau-option drapeau-bleu" id="drapeau-item-bleu">
             <input type="radio" name="drapeauRadio" value="Bleu" onchange="onDrapeauChange('bleu')">
-            <span class="drapeau-dot"></span>
+            <span class="drapeau-flag"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><line x1="2.4" y1="1" x2="2.4" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M2.9 1.9C5.8 0.6 8.4 3.1 12.4 1.9V8.6C8.4 9.8 5.8 7.3 2.9 8.6V1.9Z" fill="currentColor"/></svg></span>
             <span class="txt">
               <strong>Bleu — Léger retard</strong>
               <span>Moins de 5% de retard par rapport à l'attendu sur Teachizy — rien de grave, suit bien, se connecte, rendez-vous ok.</span>
@@ -552,7 +559,7 @@
           </label>
           <label class="drapeau-option drapeau-jaune" id="drapeau-item-jaune">
             <input type="radio" name="drapeauRadio" value="Jaune" onchange="onDrapeauChange('jaune')">
-            <span class="drapeau-dot"></span>
+            <span class="drapeau-flag"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><line x1="2.4" y1="1" x2="2.4" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M2.9 1.9C5.8 0.6 8.4 3.1 12.4 1.9V8.6C8.4 9.8 5.8 7.3 2.9 8.6V1.9Z" fill="currentColor"/></svg></span>
             <span class="txt">
               <strong>Jaune — Retard non rattrapé</strong>
               <span>Retard non rattrapé et/ou moins de 50% de complétion Teachizy en semaine 2, et/ou 1 rendez-vous manqué, et/ou répond peu aux sollicitations, et/ou ne fait pas les travaux.</span>
@@ -560,7 +567,7 @@
           </label>
           <label class="drapeau-option drapeau-rouge" id="drapeau-item-rouge">
             <input type="radio" name="drapeauRadio" value="Rouge" onchange="onDrapeauChange('rouge')">
-            <span class="drapeau-dot"></span>
+            <span class="drapeau-flag"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><line x1="2.4" y1="1" x2="2.4" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M2.9 1.9C5.8 0.6 8.4 3.1 12.4 1.9V8.6C8.4 9.8 5.8 7.3 2.9 8.6V1.9Z" fill="currentColor"/></svg></span>
             <span class="txt">
               <strong>Rouge — Alerte critique</strong>
               <span>Moins de 80% de complétion Teachizy en semaine 3, et/ou ne répond plus du tout aux sollicitations, ne se connecte pas ou très peu.</span>
@@ -852,7 +859,7 @@
     summaryZone.innerHTML = `
       <div class="hist-summary">
         <div class="hist-top">
-          <span class="hist-date">Dernier suivi — ${esc(dernier['Date du suivi'])} (semaine ${esc(dernier['Semaine de suivi'])})</span>
+          <span class="hist-date">${drapeauBadge(dernier['Drapeau'])}Dernier suivi — ${esc(dernier['Date du suivi'])} (semaine ${esc(dernier['Semaine de suivi'])})</span>
           <span class="hist-pct">${esc(dernier['% parcours validé'])}%</span>
         </div>
         <div class="hist-line"><b>Points abordés</b>${esc(dernier['Points abordés']) || '—'}</div>
@@ -865,7 +872,7 @@
       fullEl.innerHTML = historique.map(h => `
         <div class="hist-card">
           <div class="hist-card-head">
-            <span>${esc(h['Date du suivi'])} — semaine ${esc(h['Semaine de suivi'])} — ${esc(h['Formatrice'])}</span>
+            <span>${drapeauBadge(h['Drapeau'])}${esc(h['Date du suivi'])} — semaine ${esc(h['Semaine de suivi'])} — ${esc(h['Formatrice'])}</span>
             <span class="pct">${esc(h['% parcours validé'])}%</span>
           </div>
           <div>${esc(h['Points abordés']) || '—'}</div>
@@ -873,6 +880,15 @@
         </div>
       `).join('');
     }
+  }
+
+  // Petit badge drapeau (pastille + icône) réutilisé dans le résumé et l'historique déplié.
+  function drapeauBadge(valeur) {
+    const cle = String(valeur || '').trim().toLowerCase();
+    const classes = { gris: 'drapeau-gris', bleu: 'drapeau-bleu', jaune: 'drapeau-jaune', rouge: 'drapeau-rouge' };
+    if (!classes[cle]) return '';
+    const svg = '<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><line x1="2.4" y1="1" x2="2.4" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M2.9 1.9C5.8 0.6 8.4 3.1 12.4 1.9V8.6C8.4 9.8 5.8 7.3 2.9 8.6V1.9Z" fill="currentColor"/></svg>';
+    return `<span class="hist-drapeau-badge ${classes[cle]}">${svg}</span>`;
   }
 
   function toggleHistoriqueFull() {
@@ -1006,7 +1022,7 @@
         btn.textContent = 'Enregistrer le suivi';
         showMsg("L'envoi prend plus de temps que prévu — vérifie le récapitulatif pour confirmer, ou réessaie.", false);
       }
-    }, 10000);
+    }, 20000);
   }
 
   // Autocomplétion : charge la liste des apprenantes déjà enregistrées et alimente le <datalist>.
