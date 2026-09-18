@@ -197,6 +197,27 @@
   }
   .checkbox-item input { accent-color: var(--purple); width: 15px; height: 15px; flex-shrink: 0; }
 
+  /* Signature des documents administratifs */
+  .signature-grid { display: flex; flex-direction: column; gap: 10px; }
+  .signature-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border: 1.5px solid var(--grey-border); border-radius: 8px;
+    background: var(--grey-light); cursor: pointer; transition: all .15s;
+  }
+  .signature-item:hover { border-color: var(--pink); }
+  .signature-item input { width: 17px; height: 17px; flex-shrink: 0; accent-color: var(--pink-dark); }
+  .signature-item.checked { border-color: var(--pink-dark); background: var(--pink-tint); }
+  .signature-item .txt { font-size: 13px; font-weight: 600; }
+  .signature-item.done {
+    cursor: default;
+    border-color: var(--green); background: var(--green-tint); color: #2f6b45;
+    font-weight: 600; padding: 10px 12px; gap: 8px;
+  }
+  .signature-item.done .icon { font-size: 15px; }
+  .section.section-alert .section-header { background: #B33A3A !important; }
+  @keyframes sectionPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(179,58,58,.35); } 50% { box-shadow: 0 0 0 6px rgba(179,58,58,0); } }
+  .section.section-alert { animation: sectionPulse 1s ease-out 2; }
+
   /* Drapeau de suivi */
   .drapeau-grid { display: flex; flex-direction: column; gap: 10px; }
   .drapeau-option {
@@ -517,6 +538,19 @@
       </div>
     </div>
 
+    <div class="section" id="section-signatures">
+      <div class="section-header" style="background:var(--pink-dark);"><span class="icon">🖊️</span> Signature des documents administratifs</div>
+      <div class="section-body">
+        <div class="note-text" style="font-size:11px;color:var(--grey-mid);font-style:italic;margin-bottom:10px;">
+          Tant qu'un document n'est pas signé, cette section reste obligatoire à chaque suivi — profites-en pour le faire signer en rendez-vous.
+        </div>
+        <div class="signature-grid" id="signatureGrid">
+          <div id="sig-item-attestation"></div>
+          <div id="sig-item-programme"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="section" id="section-pct">
       <div class="section-header violet"><span class="icon">📊</span> Niveau de suivi du parcours</div>
       <div class="section-body">
@@ -643,6 +677,8 @@
   <input type="hidden" name="pctProgression">
   <input type="hidden" name="dateCertification">
   <input type="hidden" name="drapeau">
+  <input type="hidden" name="signatureAttestation">
+  <input type="hidden" name="signatureProgramme">
   <input type="hidden" name="pointsCoches">
   <input type="hidden" name="pointsAutre">
   <input type="hidden" name="difficultes">
@@ -672,6 +708,16 @@
   let dateDemarrageConnue = ''; // valeur utilisée à l'enregistrement (lecture seule ou saisie)
   let formuleConnue = '';
   let modaliteConnue = '';
+
+  // Signature des documents administratifs (attestation sur l'honneur / programme de formation) :
+  // une fois signé une fois (vu dans l'historique), on ne redemande plus jamais — sinon la case
+  // reste affichée et obligatoire à CHAQUE suivi tant qu'elle n'a pas été cochée.
+  const SIGNATURE_DOCS = [
+    { cle: 'attestation', champ: "Signature attestation sur l'honneur", label: "Attestation sur l'honneur" },
+    { cle: 'programme',   champ: "Signature programme de formation",    label: "Programme de formation" }
+  ];
+  let signaturesDejaFaites = { attestation: false, programme: false };
+  let signaturesCochees    = { attestation: false, programme: false };
 
   function esc(s) {
     if (!s && s !== 0) return '';
@@ -728,7 +774,7 @@
   }
 
   function setSectionsEnabled(enabled) {
-    ['section-identite', 'section-suivi', 'section-pct', 'section-drapeau', 'section-points', 'section-bilan'].forEach(id => {
+    ['section-identite', 'section-suivi', 'section-signatures', 'section-pct', 'section-drapeau', 'section-points', 'section-bilan'].forEach(id => {
       document.getElementById(id).classList.toggle('disabled', !enabled);
     });
   }
@@ -753,6 +799,50 @@
   function getDrapeau() {
     const checked = document.querySelector('input[name="drapeauRadio"]:checked');
     return checked ? checked.value : '';
+  }
+
+  // "Oui" (string écrite par ce formulaire), TRUE/true (case à cocher Sheets) ou booléen JS :
+  // on accepte tout, la Feuille de calcul peut stocker l'un ou l'autre selon comment la colonne a été créée.
+  function estSigne_(v) {
+    return v === true || v === 'Oui' || v === 'TRUE' || v === 'true' || v === 1 || v === '1';
+  }
+
+  function renderSignatures() {
+    SIGNATURE_DOCS.forEach(doc => {
+      const zone = document.getElementById('sig-item-' + doc.cle);
+      if (signaturesDejaFaites[doc.cle]) {
+        zone.innerHTML = `<div class="signature-item done"><span class="icon">✅</span><span class="txt">${esc(doc.label)} — déjà signée</span></div>`;
+      } else {
+        const checked = signaturesCochees[doc.cle];
+        zone.innerHTML = `<label class="signature-item${checked ? ' checked' : ''}" id="sig-label-${doc.cle}">
+          <input type="checkbox" ${checked ? 'checked' : ''} onchange="onSignatureChange('${doc.cle}', this.checked)">
+          <span class="txt">${esc(doc.label)} signée aujourd'hui</span>
+        </label>`;
+      }
+    });
+  }
+
+  function onSignatureChange(cle, checked) {
+    signaturesCochees[cle] = checked;
+    const label = document.getElementById('sig-label-' + cle);
+    if (label) label.classList.toggle('checked', checked);
+  }
+
+  // true si le document est déjà signé (historique) OU vient d'être coché maintenant.
+  function getSignatures() {
+    const out = {};
+    SIGNATURE_DOCS.forEach(doc => {
+      out[doc.cle] = signaturesDejaFaites[doc.cle] || signaturesCochees[doc.cle];
+    });
+    return out;
+  }
+
+  function highlightSection(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('section-alert');
+    setTimeout(() => el.classList.remove('section-alert'), 2000);
   }
 
   function onDateDemarrageChange() {
@@ -801,6 +891,9 @@
         document.getElementById('identite-editable').style.display = 'grid';
         afficherHistorique([]);
         setDrapeau('');
+        signaturesDejaFaites = { attestation: false, programme: false };
+        signaturesCochees = { attestation: false, programme: false };
+        renderSignatures();
       } else {
         ficheEtat = 'existante';
         const dernier = historique[0];
@@ -826,6 +919,15 @@
         // Drapeau : pré-coché avec la dernière valeur connue comme point de départ,
         // mais reste un choix actif de Sabrina à réévaluer à chaque suivi.
         setDrapeau(dernier['Drapeau'] || '');
+
+        // Signatures : on regarde TOUT l'historique (pas seulement le dernier suivi) — dès qu'une
+        // signature a été cochée une fois, on ne la redemande plus jamais.
+        signaturesDejaFaites = {
+          attestation: historique.some(h => estSigne_(h[SIGNATURE_DOCS[0].champ])),
+          programme:   historique.some(h => estSigne_(h[SIGNATURE_DOCS[1].champ]))
+        };
+        signaturesCochees = { attestation: false, programme: false };
+        renderSignatures();
       }
 
       document.getElementById('dateSuivi').value = new Date().toISOString().slice(0,10);
@@ -919,6 +1021,9 @@
     document.getElementById('dateDemarrage').value = '';
     document.getElementById('dateCertification').value = '';
     setDrapeau('');
+    signaturesDejaFaites = { attestation: false, programme: false };
+    signaturesCochees = { attestation: false, programme: false };
+    renderSignatures();
     document.getElementById('historique-empty').style.display = 'block';
     document.getElementById('historique-panel').style.display = 'none';
     if (keepName) document.getElementById('apprenante').focus();
@@ -980,6 +1085,8 @@
       pctProgression:    document.getElementById('pctProgression').value,
       dateCertification: document.getElementById('dateCertification').value,
       drapeau:           getDrapeau(),
+      signatureAttestation: getSignatures().attestation ? 'Oui' : '',
+      signatureProgramme:   getSignatures().programme   ? 'Oui' : '',
       pointsCoches:      getPointsCoches(),
       pointsAutre:       document.getElementById('pointsAutre').value,
       difficultes:       document.getElementById('difficultes').value,
@@ -993,6 +1100,13 @@
     }
     if (!payload.drapeau) {
       showMsg('Merci de sélectionner un drapeau de suivi (gris, bleu, jaune ou rouge).', false);
+      return;
+    }
+    const sig = getSignatures();
+    const docsManquants = SIGNATURE_DOCS.filter(d => !sig[d.cle]).map(d => d.label);
+    if (docsManquants.length > 0) {
+      showMsg('Merci de faire signer et de cocher : ' + docsManquants.join(' et ') + ' avant d\'enregistrer ce suivi.', false);
+      highlightSection('section-signatures');
       return;
     }
     if (ficheEtat === 'nouvelle' && (!payload.formule || !payload.modalite || !payload.dateDemarrage)) {
@@ -1050,6 +1164,7 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     buildPointsGrid();
+    renderSignatures();
     setSectionsEnabled(false);
     chargerListeApprenantes();
   });
