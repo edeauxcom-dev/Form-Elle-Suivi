@@ -526,7 +526,7 @@
         </div>
         <div class="field">
           <label>N° de rendez-vous</label>
-          <select id="numRdv">
+          <select id="numRdv" onchange="onNumRdvChange()">
             <option value="">— Sélectionner —</option>
             <option>1er rendez-vous</option>
             <option>2ème rendez-vous</option>
@@ -534,6 +534,28 @@
             <option>4ème rendez-vous</option>
             <option>Rendez-vous complémentaire</option>
           </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="section-devoirs" style="display:none;">
+      <div class="section-header" style="background:#C07A3E;"><span class="icon">📓</span> Devoirs de la semaine</div>
+      <div class="section-body">
+        <div class="note-text" style="font-size:11px;color:var(--grey-mid);font-style:italic;margin-bottom:10px;">
+          À partir du 2ème rendez-vous : le devoir demandé au suivi précédent a-t-il été fait ?
+        </div>
+        <div class="drapeau-grid" id="devoirsGrid">
+          <label class="drapeau-option" id="devoir-item-fait">
+            <input type="radio" name="devoirsRadio" value="Fait" onchange="onDevoirChange('fait')">
+            <span class="txt"><strong>✅ Fait</strong></span>
+          </label>
+          <label class="drapeau-option" id="devoir-item-non-fait">
+            <input type="radio" name="devoirsRadio" value="Non fait" onchange="onDevoirChange('non-fait')">
+            <span class="txt">
+              <strong>⚠️ Non fait</strong>
+              <span>Une alerte est automatiquement postée sur la carte ClickUp de l'apprenante, pour Ninie.</span>
+            </span>
+          </label>
         </div>
       </div>
     </div>
@@ -679,6 +701,7 @@
   <input type="hidden" name="drapeau">
   <input type="hidden" name="signatureAttestation">
   <input type="hidden" name="signatureProgramme">
+  <input type="hidden" name="devoirs">
   <input type="hidden" name="pointsCoches">
   <input type="hidden" name="pointsAutre">
   <input type="hidden" name="difficultes">
@@ -718,6 +741,13 @@
   ];
   let signaturesDejaFaites = { attestation: false, programme: false };
   let signaturesCochees    = { attestation: false, programme: false };
+
+  // Devoirs de la semaine : obligatoire (Fait/Non fait) à partir du 2ème RDV. Si "Non fait",
+  // une alerte est postée automatiquement sur la carte ClickUp de l'apprenante (côté Apps Script) —
+  // pas d'email, cf. politique du projet.
+  function estRdv2Plus_(valeur) {
+    return !!valeur && valeur !== "1er rendez-vous";
+  }
 
   function esc(s) {
     if (!s && s !== 0) return '';
@@ -774,7 +804,7 @@
   }
 
   function setSectionsEnabled(enabled) {
-    ['section-identite', 'section-suivi', 'section-signatures', 'section-pct', 'section-drapeau', 'section-points', 'section-bilan'].forEach(id => {
+    ['section-identite', 'section-suivi', 'section-devoirs', 'section-signatures', 'section-pct', 'section-drapeau', 'section-points', 'section-bilan'].forEach(id => {
       document.getElementById(id).classList.toggle('disabled', !enabled);
     });
   }
@@ -798,6 +828,32 @@
 
   function getDrapeau() {
     const checked = document.querySelector('input[name="drapeauRadio"]:checked');
+    return checked ? checked.value : '';
+  }
+
+  function onNumRdvChange() {
+    const visible = estRdv2Plus_(document.getElementById('numRdv').value);
+    document.getElementById('section-devoirs').style.display = visible ? 'block' : 'none';
+    if (!visible) setDevoir('');
+  }
+
+  function onDevoirChange(cle) {
+    document.querySelectorAll('#devoirsGrid .drapeau-option').forEach(el => el.classList.remove('selected'));
+    document.getElementById('devoir-item-' + cle).classList.add('selected');
+  }
+
+  function setDevoir(valeurTexte) {
+    document.querySelectorAll('#devoirsGrid .drapeau-option').forEach(el => el.classList.remove('selected'));
+    document.querySelectorAll('input[name="devoirsRadio"]').forEach(el => { el.checked = false; });
+    if (!valeurTexte) return;
+    const radio = document.querySelector('input[name="devoirsRadio"][value="' + valeurTexte + '"]');
+    if (radio) radio.checked = true;
+    const item = document.getElementById('devoir-item-' + (valeurTexte === 'Fait' ? 'fait' : 'non-fait'));
+    if (item) item.classList.add('selected');
+  }
+
+  function getDevoir() {
+    const checked = document.querySelector('input[name="devoirsRadio"]:checked');
     return checked ? checked.value : '';
   }
 
@@ -894,6 +950,8 @@
         signaturesDejaFaites = { attestation: false, programme: false };
         signaturesCochees = { attestation: false, programme: false };
         renderSignatures();
+        document.getElementById('section-devoirs').style.display = 'none';
+        setDevoir('');
       } else {
         ficheEtat = 'existante';
         const dernier = historique[0];
@@ -928,6 +986,8 @@
         };
         signaturesCochees = { attestation: false, programme: false };
         renderSignatures();
+        document.getElementById('section-devoirs').style.display = 'none';
+        setDevoir('');
       }
 
       document.getElementById('dateSuivi').value = new Date().toISOString().slice(0,10);
@@ -1024,6 +1084,8 @@
     signaturesDejaFaites = { attestation: false, programme: false };
     signaturesCochees = { attestation: false, programme: false };
     renderSignatures();
+    document.getElementById('section-devoirs').style.display = 'none';
+    setDevoir('');
     document.getElementById('historique-empty').style.display = 'block';
     document.getElementById('historique-panel').style.display = 'none';
     if (keepName) document.getElementById('apprenante').focus();
@@ -1087,6 +1149,7 @@
       drapeau:           getDrapeau(),
       signatureAttestation: getSignatures().attestation ? 'Oui' : '',
       signatureProgramme:   getSignatures().programme   ? 'Oui' : '',
+      devoirs:           getDevoir(),
       pointsCoches:      getPointsCoches(),
       pointsAutre:       document.getElementById('pointsAutre').value,
       difficultes:       document.getElementById('difficultes').value,
@@ -1107,6 +1170,11 @@
     if (docsManquants.length > 0) {
       showMsg('Merci de faire signer et de cocher : ' + docsManquants.join(' et ') + ' avant d\'enregistrer ce suivi.', false);
       highlightSection('section-signatures');
+      return;
+    }
+    if (estRdv2Plus_(payload.numRdv) && !payload.devoirs) {
+      showMsg('Merci d\'indiquer si le devoir de la semaine a été fait ou non avant d\'enregistrer ce suivi.', false);
+      highlightSection('section-devoirs');
       return;
     }
     if (ficheEtat === 'nouvelle' && (!payload.formule || !payload.modalite || !payload.dateDemarrage)) {
