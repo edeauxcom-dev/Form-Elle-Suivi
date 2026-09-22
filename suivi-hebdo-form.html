@@ -576,12 +576,13 @@
     <div class="section" id="section-pct">
       <div class="section-header violet"><span class="icon">📊</span> Niveau de suivi du parcours</div>
       <div class="section-body">
-        <div class="field">
+              <div class="field">
           <label>% du parcours validé sur Teachizy</label>
           <input type="number" id="pctProgression" min="0" max="100" placeholder="Ex : 45">
         </div>
+        <div id="teachizy-status" style="font-size:11.5px; margin-top:6px; font-weight:600;"></div>
         <div class="note-text" style="font-size:11px;color:var(--grey-mid);font-style:italic;margin-top:8px;">
-          À récupérer directement sur la plateforme Teachizy avant de compléter cette fiche.
+          Récupéré automatiquement depuis Teachizy à l'ouverture de la fiche. Modifiable si besoin (ex. Teachizy indisponible).
         </div>
         <div class="field" style="margin-top:14px;">
           <label>Date de certification envisagée</label>
@@ -913,7 +914,29 @@
     // Si on modifie le nom après une recherche, on repart de zéro proprement.
     if (ficheEtat !== null) resetRecherche(true);
   }
-
+  // Phase F (Bloc A+B) : appelée après chargement réussi d'une fiche. Va chercher le % de
+  // complétion Teachizy côté serveur et le pré-remplit — le serveur remonte aussi ce % sur la
+  // carte ClickUp dans le même appel.
+  async function chargerPctTeachizy(nom) {
+    const statusEl = document.getElementById('teachizy-status');
+    statusEl.textContent = '⏳ Récupération du % Teachizy…';
+    statusEl.style.color = 'var(--grey-mid)';
+    try {
+      const res = await fetch(API_URL + '?action=teachizy&apprenante=' + encodeURIComponent(nom) + '&_=' + Date.now(), { cache: 'no-store' });
+      const data = await res.json();
+      if (data.ok) {
+        document.getElementById('pctProgression').value = data.pct;
+        statusEl.textContent = '✅ ' + data.pct + '% récupéré automatiquement depuis Teachizy (remonté sur ClickUp).';
+        statusEl.style.color = 'var(--green)';
+      } else {
+        statusEl.textContent = '⚠️ % non récupéré automatiquement (' + (data.error || 'raison inconnue') + ') — saisis-le à la main.';
+        statusEl.style.color = '#B33A3A';
+      }
+    } catch (err) {
+      statusEl.textContent = '⚠️ % non récupéré automatiquement (connexion) — saisis-le à la main.';
+      statusEl.style.color = '#B33A3A';
+    }
+  }
   async function chargerFiche() {
     const nom = document.getElementById('apprenante').value.trim();
     if (!nom) {
@@ -989,6 +1012,8 @@
         document.getElementById('section-devoirs').style.display = 'none';
         setDevoir('');
       }
+
+           chargerPctTeachizy(nom);
 
       document.getElementById('dateSuivi').value = new Date().toISOString().slice(0,10);
     } catch (err) {
