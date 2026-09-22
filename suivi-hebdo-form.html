@@ -917,22 +917,32 @@
   // Phase F (Bloc A+B) : appelée après chargement réussi d'une fiche. Va chercher le % de
   // complétion Teachizy côté serveur et le pré-remplit — le serveur remonte aussi ce % sur la
   // carte ClickUp dans le même appel.
-  async function chargerPctTeachizy(nom) {
+    async function chargerPctTeachizy(nom) {
     const statusEl = document.getElementById('teachizy-status');
+    const champPct = document.getElementById('pctProgression');
     statusEl.textContent = '⏳ Récupération du % Teachizy…';
     statusEl.style.color = 'var(--grey-mid)';
     try {
       const res = await fetch(API_URL + '?action=teachizy&apprenante=' + encodeURIComponent(nom) + '&_=' + Date.now(), { cache: 'no-store' });
       const data = await res.json();
       if (data.ok) {
-        document.getElementById('pctProgression').value = data.pct;
+        champPct.value = data.pct;
+        champPct.setAttribute('readonly', 'readonly');
+        champPct.style.background = 'var(--grey-light)';
+        champPct.style.cursor = 'not-allowed';
         statusEl.textContent = '✅ ' + data.pct + '% récupéré automatiquement depuis Teachizy (remonté sur ClickUp).';
         statusEl.style.color = 'var(--green)';
       } else {
+        champPct.removeAttribute('readonly');
+        champPct.style.background = '';
+        champPct.style.cursor = '';
         statusEl.textContent = '⚠️ % non récupéré automatiquement (' + (data.error || 'raison inconnue') + ') — saisis-le à la main.';
         statusEl.style.color = '#B33A3A';
       }
     } catch (err) {
+      champPct.removeAttribute('readonly');
+      champPct.style.background = '';
+      champPct.style.cursor = '';
       statusEl.textContent = '⚠️ % non récupéré automatiquement (connexion) — saisis-le à la main.';
       statusEl.style.color = '#B33A3A';
     }
@@ -1105,6 +1115,9 @@
     document.getElementById('modalite').selectedIndex = 0;
     document.getElementById('dateDemarrage').value = '';
     document.getElementById('dateCertification').value = '';
+        document.getElementById('pctProgression').removeAttribute('readonly');
+    document.getElementById('pctProgression').style.background = '';
+    document.getElementById('pctProgression').style.cursor = '';
     setDrapeau('');
     signaturesDejaFaites = { attestation: false, programme: false };
     signaturesCochees = { attestation: false, programme: false };
