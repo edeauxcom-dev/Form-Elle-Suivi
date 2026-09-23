@@ -532,8 +532,38 @@
             <option>2ème rendez-vous</option>
             <option>3ème rendez-vous</option>
             <option>4ème rendez-vous</option>
-            <option>Rendez-vous complémentaire</option>
+                        <option>Rendez-vous complémentaire</option>
           </select>
+        </div>
+        <label class="signature-item" id="rdvNonRealiseWrap" style="margin-top:14px;">
+          <input type="checkbox" id="rdvNonRealise" onchange="onRdvNonRealiseChange()">
+          <span class="txt">Le rendez-vous n'a pas eu lieu</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="section" id="section-rdv-motif" style="display:none;">
+      <div class="section-header" style="background:#B33A3A;"><span class="icon">📵</span> Motif du rendez-vous non réalisé</div>
+      <div class="section-body">
+        <div class="drapeau-grid" id="motifGrid">
+          <label class="drapeau-option" id="motif-item-nerepond">
+            <input type="radio" name="motifRadio" value="Ne répond pas" onchange="onMotifChange('nerepond')">
+            <span class="txt"><strong>Ne répond pas</strong></span>
+          </label>
+          <label class="drapeau-option" id="motif-item-reporte">
+            <input type="radio" name="motifRadio" value="Reporté" onchange="onMotifChange('reporte')">
+            <span class="txt">
+              <strong>Reporté</strong><br>
+              <input type="date" id="dateReport" style="margin-top:6px;width:160px;" onclick="event.stopPropagation()">
+            </span>
+          </label>
+          <label class="drapeau-option" id="motif-item-autre">
+            <input type="radio" name="motifRadio" value="Autre" onchange="onMotifChange('autre')">
+            <span class="txt">
+              <strong>Autre</strong><br>
+              <input type="text" id="motifAutreTexte" placeholder="Préciser…" style="margin-top:6px;width:220px;" onclick="event.stopPropagation()">
+            </span>
+          </label>
         </div>
       </div>
     </div>
@@ -696,7 +726,10 @@
   <input type="hidden" name="formule">
   <input type="hidden" name="modalite">
   <input type="hidden" name="dateDemarrage">
-  <input type="hidden" name="numRdv">
+   <input type="hidden" name="numRdv">
+  <input type="hidden" name="rdvRealise">
+  <input type="hidden" name="motifNonRealise">
+  <input type="hidden" name="detailMotif">
   <input type="hidden" name="pctProgression">
   <input type="hidden" name="dateCertification">
   <input type="hidden" name="drapeau">
@@ -830,6 +863,51 @@
   function getDrapeau() {
     const checked = document.querySelector('input[name="drapeauRadio"]:checked');
     return checked ? checked.value : '';
+  }
+
+   function onRdvNonRealiseChange() {
+    const checked = document.getElementById('rdvNonRealise').checked;
+    document.getElementById('section-rdv-motif').style.display = checked ? 'block' : 'none';
+    if (checked) {
+      ['section-devoirs','section-signatures','section-pct','section-drapeau','section-points','section-bilan'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
+      });
+    } else {
+      ['section-signatures','section-pct','section-drapeau','section-points','section-bilan'].forEach(id => {
+        document.getElementById(id).style.display = 'block';
+      });
+      onNumRdvChange();
+      setMotif('');
+    }
+  }
+
+  function onMotifChange(cle) {
+    document.querySelectorAll('#motifGrid .drapeau-option').forEach(el => el.classList.remove('selected'));
+    document.getElementById('motif-item-' + cle).classList.add('selected');
+  }
+
+  function setMotif(valeurTexte) {
+    document.querySelectorAll('#motifGrid .drapeau-option').forEach(el => el.classList.remove('selected'));
+    document.querySelectorAll('input[name="motifRadio"]').forEach(el => { el.checked = false; });
+    document.getElementById('dateReport').value = '';
+    document.getElementById('motifAutreTexte').value = '';
+    if (!valeurTexte) return;
+    const cle = valeurTexte === 'Ne répond pas' ? 'nerepond' : (valeurTexte === 'Reporté' ? 'reporte' : 'autre');
+    const radio = document.querySelector('input[name="motifRadio"][value="' + valeurTexte + '"]');
+    if (radio) radio.checked = true;
+    document.getElementById('motif-item-' + cle).classList.add('selected');
+  }
+
+  function getMotif() {
+    const checked = document.querySelector('input[name="motifRadio"]:checked');
+    return checked ? checked.value : '';
+  }
+
+  function getDetailMotif() {
+    const m = getMotif();
+    if (m === 'Reporté') return document.getElementById('dateReport').value;
+    if (m === 'Autre') return document.getElementById('motifAutreTexte').value;
+    return '';
   }
 
   function onNumRdvChange() {
@@ -1122,8 +1200,11 @@
     signaturesDejaFaites = { attestation: false, programme: false };
     signaturesCochees = { attestation: false, programme: false };
     renderSignatures();
-    document.getElementById('section-devoirs').style.display = 'none';
+        document.getElementById('section-devoirs').style.display = 'none';
     setDevoir('');
+    document.getElementById('rdvNonRealise').checked = false;
+    document.getElementById('section-rdv-motif').style.display = 'none';
+    setMotif('');
     document.getElementById('historique-empty').style.display = 'block';
     document.getElementById('historique-panel').style.display = 'none';
     if (keepName) document.getElementById('apprenante').focus();
@@ -1173,6 +1254,8 @@
     const modaliteFinal = ficheEtat === 'nouvelle' ? document.getElementById('modalite').value : modaliteConnue;
     const dateDemarrageFinal = ficheEtat === 'nouvelle' ? document.getElementById('dateDemarrage').value : dateDemarrageConnue;
 
+       const rdvNonRealise = document.getElementById('rdvNonRealise').checked;
+
     const payload = {
       dateSuivi:         document.getElementById('dateSuivi').value,
       formatrice:        formatriceFinal,
@@ -1182,38 +1265,60 @@
       modalite:          modaliteFinal,
       dateDemarrage:     dateDemarrageFinal,
       numRdv:            document.getElementById('numRdv').value,
-      pctProgression:    document.getElementById('pctProgression').value,
-      dateCertification: document.getElementById('dateCertification').value,
-      drapeau:           getDrapeau(),
-      signatureAttestation: getSignatures().attestation ? 'Oui' : '',
-      signatureProgramme:   getSignatures().programme   ? 'Oui' : '',
-      devoirs:           getDevoir(),
-      pointsCoches:      getPointsCoches(),
-      pointsAutre:       document.getElementById('pointsAutre').value,
-      difficultes:       document.getElementById('difficultes').value,
-      correctionDevoirs: document.getElementById('correctionDevoirs').value,
-      autre:             document.getElementById('autre').value
+      rdvRealise:        rdvNonRealise ? 'Non' : 'Oui',
+      motifNonRealise:   rdvNonRealise ? getMotif() : '',
+      detailMotif:       rdvNonRealise ? getDetailMotif() : '',
+      pctProgression:    rdvNonRealise ? '' : document.getElementById('pctProgression').value,
+      dateCertification: rdvNonRealise ? '' : document.getElementById('dateCertification').value,
+      drapeau:           rdvNonRealise ? '' : getDrapeau(),
+      signatureAttestation: rdvNonRealise ? '' : (getSignatures().attestation ? 'Oui' : ''),
+      signatureProgramme:   rdvNonRealise ? '' : (getSignatures().programme   ? 'Oui' : ''),
+      devoirs:           rdvNonRealise ? '' : getDevoir(),
+      pointsCoches:      rdvNonRealise ? '' : getPointsCoches(),
+      pointsAutre:       rdvNonRealise ? '' : document.getElementById('pointsAutre').value,
+      difficultes:       rdvNonRealise ? '' : document.getElementById('difficultes').value,
+      correctionDevoirs: rdvNonRealise ? '' : document.getElementById('correctionDevoirs').value,
+      autre:             rdvNonRealise ? '' : document.getElementById('autre').value
     };
 
     if (!payload.dateSuivi || !payload.apprenante || !payload.formatrice) {
       showMsg('Merci de renseigner au minimum la date, l\'apprenante et la formatrice.', false);
       return;
     }
-    if (!payload.drapeau) {
-      showMsg('Merci de sélectionner un drapeau de suivi (gris, bleu, jaune ou rouge).', false);
-      return;
-    }
-    const sig = getSignatures();
-    const docsManquants = SIGNATURE_DOCS.filter(d => !sig[d.cle]).map(d => d.label);
-    if (docsManquants.length > 0) {
-      showMsg('Merci de faire signer et de cocher : ' + docsManquants.join(' et ') + ' avant d\'enregistrer ce suivi.', false);
-      highlightSection('section-signatures');
-      return;
-    }
-    if (estRdv2Plus_(payload.numRdv) && !payload.devoirs) {
-      showMsg('Merci d\'indiquer si le devoir de la semaine a été fait ou non avant d\'enregistrer ce suivi.', false);
-      highlightSection('section-devoirs');
-      return;
+
+    if (rdvNonRealise) {
+      if (!payload.motifNonRealise) {
+        showMsg('Merci de préciser le motif du rendez-vous non réalisé avant d\'enregistrer.', false);
+        highlightSection('section-rdv-motif');
+        return;
+      }
+      if (payload.motifNonRealise === 'Reporté' && !payload.detailMotif) {
+        showMsg('Merci d\'indiquer la nouvelle date prévue.', false);
+        highlightSection('section-rdv-motif');
+        return;
+      }
+      if (payload.motifNonRealise === 'Autre' && !payload.detailMotif) {
+        showMsg('Merci de préciser le motif.', false);
+        highlightSection('section-rdv-motif');
+        return;
+      }
+    } else {
+      if (!payload.drapeau) {
+        showMsg('Merci de sélectionner un drapeau de suivi (gris, bleu, jaune ou rouge).', false);
+        return;
+      }
+      const sig = getSignatures();
+      const docsManquants = SIGNATURE_DOCS.filter(d => !sig[d.cle]).map(d => d.label);
+      if (docsManquants.length > 0) {
+        showMsg('Merci de faire signer et de cocher : ' + docsManquants.join(' et ') + ' avant d\'enregistrer ce suivi.', false);
+        highlightSection('section-signatures');
+        return;
+      }
+      if (estRdv2Plus_(payload.numRdv) && !payload.devoirs) {
+        showMsg('Merci d\'indiquer si le devoir de la semaine a été fait ou non avant d\'enregistrer ce suivi.', false);
+        highlightSection('section-devoirs');
+        return;
+      }
     }
     if (ficheEtat === 'nouvelle' && (!payload.formule || !payload.modalite || !payload.dateDemarrage)) {
       showMsg("Première fiche de cette apprenante : renseigne aussi la formule, la modalité et la date de démarrage.", false);
